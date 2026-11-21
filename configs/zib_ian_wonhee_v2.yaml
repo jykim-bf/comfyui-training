@@ -1,0 +1,91 @@
+job: extension
+config:
+  name: zib_ian_wonhee_v2
+  process:
+  - type: sd_trainer
+    training_folder: /home/sasair/dev/training/outputs
+    device: cuda:0
+    trigger_word: ''
+    network:
+      type: lora
+      linear: 128
+      linear_alpha: 128
+    save:
+      dtype: bf16
+      save_every: 500
+      max_step_saves_to_keep: 9999
+      save_format: safetensors
+    datasets:
+    - folder_path: /home/sasair/dev/training/inputs/IAn
+      caption_ext: txt
+      caption_dropout_rate: 0.05
+      shuffle_tokens: false
+      cache_latents_to_disk: true
+      flip_x: true
+      resolution:
+      - 512
+      - 768
+      - 1024
+    - folder_path: /home/sasair/dev/training/inputs/WonHee
+      caption_ext: txt
+      caption_dropout_rate: 0.05
+      shuffle_tokens: false
+      cache_latents_to_disk: true
+      flip_x: true
+      resolution:
+      - 512
+      - 768
+      - 1024
+    - folder_path: /home/sasair/dev/training/inputs/IAn_Wonhee
+      caption_ext: txt
+      caption_dropout_rate: 0.05
+      shuffle_tokens: false
+      cache_latents_to_disk: true
+      flip_x: false
+      num_repeats: 10
+      resolution:
+      - 512
+      - 768
+      - 1024
+    train:
+      batch_size: 1
+      steps: 42000
+      gradient_accumulation: 1
+      train_unet: true
+      train_text_encoder: false
+      gradient_checkpointing: true
+      noise_scheduler: flowmatch
+      timestep_type: weighted
+      optimizer: adamw8bit
+      lr: 0.0001
+      ema_config:
+        use_ema: true
+        ema_decay: 0.99
+      dtype: bf16
+    model:
+      name_or_path: Tongyi-MAI/Z-Image
+      arch: zimage
+      quantize: true
+      quantize_te: true
+      low_vram: false
+    sample:
+      sampler: flowmatch
+      sample_every: 500
+      width: 1024
+      height: 1024
+      prompts:
+      - IAn, a woman, close-up portrait, natural daylight
+      - IAn, a woman, head and shoulders, studio lighting, clean background
+      - WonHee, a woman, close-up portrait, natural daylight
+      - WonHee, a woman, chest-up shot, outdoor afternoon light, sharp focus
+      - 'IAnWonHee, from left to right: IAn, WonHee, two women standing side by side, natural daylight'
+      - 'IAnWonHee, from left to right: WonHee, IAn, two women, half-body shot, studio lighting'
+      - 'IAnWonHee, from left to right: IAn, WonHee, two women on a red carpet event, full body'
+      neg: blurry, low quality, cartoon, illustration, bad anatomy, wide-angle lens distortion
+      seed: 42
+      walk_seed: true
+      guidance_scale: 3.5
+      sample_steps: 30
+meta:
+  name: zib_ian_wonhee_v2
+  version: '2.0'

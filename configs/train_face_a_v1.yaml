@@ -1,0 +1,67 @@
+---
+# Z-Image 얼굴 LoRA 학습 config
+# 인물 A 얼굴 학습용 (최소 10~15장으로 시작)
+job: extension
+config:
+  name: "face_a_v1"
+  process:
+    - type: 'sd_trainer'
+      training_folder: "/home/sasair/dev/ai-forge/output/lora"
+      device: cuda:0
+      # trigger_word: 인물명으로 변경 (예: "psn_a")
+      trigger_word: "psn_a"
+      network:
+        type: "lora"
+        linear: 16
+        linear_alpha: 16
+      save:
+        dtype: bf16
+        save_every: 250
+        max_step_saves_to_keep: 3
+        save_format: "safetensors"  # ComfyUI 호환 형식
+      datasets:
+        - folder_path: "/home/sasair/dev/ai-forge/data/lora/face_a"
+          caption_ext: "txt"
+          caption_dropout_rate: 0.05
+          shuffle_tokens: false
+          cache_latents_to_disk: true
+          resolution: [ 512, 768, 1024 ]
+      train:
+        batch_size: 1
+        steps: 1500        # 10~15장 기준 시작값, 결과 보고 조정
+        gradient_accumulation: 1
+        train_unet: true
+        train_text_encoder: false
+        gradient_checkpointing: true
+        noise_scheduler: "flowmatch"
+        timestep_type: "weighted"
+        optimizer: "adamw8bit"
+        lr: 1e-4            # 2e-4 절대 금지
+        ema_config:
+          use_ema: true
+          ema_decay: 0.99
+        dtype: bf16
+      model:
+        name_or_path: "/home/sasair/dev/ai-forge/vendor/models/z-image"
+        arch: "zimage"
+        quantize: true
+        quantize_te: true
+        low_vram: false      # RTX 5090 32GB VRAM 충분
+      sample:
+        sampler: "flowmatch"
+        sample_every: 250
+        width: 1024
+        height: 1024
+        prompts:
+          - "psn_a, portrait photo, facing camera, natural light"
+          - "psn_a, upper body photo, outdoor, casual clothes"
+          - "psn_a, close-up face, smiling, natural expression"
+        neg: "blurry, low quality, cartoon, illustration, bad anatomy"
+        seed: 42
+        walk_seed: true
+        guidance_scale: 3.5
+        sample_steps: 30
+
+meta:
+  name: "[name]"
+  version: '1.0'

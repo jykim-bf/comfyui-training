@@ -1,0 +1,94 @@
+# MiniMax H3 ref2va 캐릭터 LoRA — IAn v1
+# 실행: cd /home/sasair/dev/training && \
+#   MODELS_PATH=/home/sasair/dev/comfyui/models .venv/bin/python ai-toolkit/run.py configs/h3_ian_v1.yaml
+# ※ 학습 전 ComfyUI 종료(VRAM 32GB 전부 필요). 로그: > outputs/<name>/train.log 2>&1 ai-toolkit 881143c (2026-09-12) 기준.
+# 참조(control_path) 없이 트리거만으로 학습. 1차 시도(참조 첨부, 2000스텝)는 트리거에 얼굴이 안 붙어 폐기:
+#   같은 인물 참조가 매 스텝 <Picture 1> 로 latent 블록+Qwen3-VL 임베딩에 들어가 모델이 답을 보고 풀었음.
+#   control_image_dropout 은 어댑터 전용이라 ref2va 에선 무시됨.
+job: extension
+config:
+  name: h3_ian_v1
+  process:
+  - type: sd_trainer
+    training_folder: /home/sasair/dev/training/outputs
+    device: cuda:0
+    trigger_word: IAn
+    network:
+      type: lora
+      linear: 16
+      linear_alpha: 16
+      network_kwargs:
+        ignore_if_contains:
+        - adaln_proj
+    save:
+      dtype: bf16
+      save_every: 500
+      max_step_saves_to_keep: 9999
+      save_format: safetensors
+    datasets:
+    - folder_path: /home/sasair/dev/training/inputs/IAn_face
+      caption_ext: txt
+      caption_dropout_rate: 0.05
+      shuffle_tokens: false
+      cache_latents_to_disk: true
+      flip_x: false
+      resolution:
+      - 512
+      num_frames: 1
+      auto_frame_count: false
+      do_audio: false
+    train:
+      batch_size: 1
+      steps: 6000  # 2000 에서 이어 학습(출력 폴더 최신 체크포인트에서 자동 재개). 닮을 때까지 연장, 3000/4000 에서 판정
+      gradient_accumulation: 1
+      train_unet: true
+      train_text_encoder: false
+      gradient_checkpointing: true
+      noise_scheduler: flowmatch
+      timestep_type: shift
+      optimizer: adamw8bit
+      lr: 0.0001
+      cache_text_embeddings: true
+      do_guidance_loss: true
+      guidance_loss_target: 3.5
+      dtype: bf16
+    model:
+      name_or_path: Comfy-Org/MiniMax-H3
+      arch: minimax_h3_ref2va
+      quantize: true
+      qtype: convrot8
+      quantize_te: true
+      qtype_te: nvfp4
+      low_vram: true
+      # 2026-09-13 CUDA OOM(32GB) → DiT int8 20GB 중 절반을 RAM 으로 스트리밍(RAM 78GB)
+      layer_offloading: true
+      layer_offloading_transformer_percent: 0.5
+      assistant_lora_path: ostris/minimax_h3_training_adapter/minimax_h3_ref2va_training_adapter_v1.safetensors
+      model_kwargs:
+        partition: ref2va_pruned
+        dit_ref2va_pruned_path: /home/sasair/dev/comfyui/models/diffusion_models/minimax/minimax_h3_ref2va_pruned_int8_convrot.safetensors
+        text_encoder_path: /home/sasair/dev/comfyui/models/text_encoders/qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors
+        video_vae_path: /home/sasair/dev/comfyui/models/vae/minimax_h3_video_vae_fp16.safetensors
+        audio_vae_path: /home/sasair/dev/comfyui/models/vae/minimax_h3_audio_vae_fp32.safetensors
+    sample:
+      sampler: flowmatch
+      neg: ""  # 툴킷 기본값 False → H3 인코더 .strip() 에러, 빈 문자열 명시
+      sample_every: 250
+      width: 768
+      height: 768
+      num_frames: 1
+      fps: 24
+      guidance_scale: 1
+      sample_steps: 28
+      seed: 42
+      walk_seed: true
+      samples:
+      - prompt: "IAn, a woman, close-up portrait, natural daylight, looking at the camera"
+        ctrl_img_1: /home/sasair/dev/training/inputs/IAn_face/IAn_001.png
+      - prompt: "IAn, a woman, medium shot walking on a hill of wildflowers, white school uniform shirt, smiling"
+        ctrl_img_1: /home/sasair/dev/training/inputs/IAn_face/IAn_050.png
+      - prompt: "IAn, a woman, close-up portrait, facing the camera directly, natural daylight, neutral expression, plain background"
+      - prompt: "IAn, a woman, medium shot, smiling, white t-shirt, outdoors in a park"
+meta:
+  name: h3_ian_v1
+  version: '1.0'

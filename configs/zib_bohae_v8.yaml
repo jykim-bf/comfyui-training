@@ -1,0 +1,65 @@
+job: extension
+config:
+  name: zib_bohae_v8
+  process:
+  - type: sd_trainer
+    training_folder: /home/sasair/dev/ai-forge/data/vton/lora/outputs
+    device: cuda:0
+    trigger_word: BoHae
+    network:
+      type: lora
+      linear: 128
+      linear_alpha: 128
+    save:
+      dtype: bf16
+      save_every: 500
+      max_step_saves_to_keep: 9999
+      save_format: safetensors
+    datasets:
+    - folder_path: /home/sasair/dev/ai-forge/data/vton/lora/inputs/bh
+      caption_ext: txt
+      caption_dropout_rate: 0.05
+      shuffle_tokens: false
+      cache_latents_to_disk: true
+      flip_x: true
+      resolution:
+      - 768
+      - 1024
+    train:
+      batch_size: 1
+      steps: 30000
+      gradient_accumulation: 1
+      train_unet: true
+      train_text_encoder: false
+      gradient_checkpointing: true
+      noise_scheduler: flowmatch
+      timestep_type: weighted
+      optimizer: adamw8bit
+      lr: 0.0001
+      ema_config:
+        use_ema: true
+        ema_decay: 0.99
+      dtype: bf16
+    model:
+      name_or_path: Tongyi-MAI/Z-Image
+      arch: zimage
+      quantize: true
+      quantize_te: true
+      low_vram: false
+    sample:
+      sampler: flowmatch
+      sample_every: 250
+      width: 1024
+      height: 1024
+      prompts:
+      - BoHae, a woman, close-up portrait, natural daylight
+      - BoHae, a woman, head and shoulders, studio lighting, clean background
+      - BoHae, a woman, chest-up shot, outdoor afternoon light, sharp focus
+      neg: blurry, low quality, cartoon, illustration, bad anatomy, wide-angle lens distortion
+      seed: 42
+      walk_seed: false
+      guidance_scale: 3.5
+      sample_steps: 30
+meta:
+  name: zib_bohae_v8
+  version: '8.0'

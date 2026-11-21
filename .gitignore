@@ -1,0 +1,15 @@
+# 학습 데이터·결과물·베이스 모델 — 추적 안 함 (configs/ · scripts/ · docs/ 만 추적)
+/inputs/
+/outputs/
+/models/
+
+# Python 캐시
+__pycache__/
+*.pyc
+*.pyo
+
+# Claude Code 개인 권한 설정
+.claude/settings.local.json
+
+# Python 가상환경 (uv)
+/.venv/

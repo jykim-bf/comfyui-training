@@ -1,0 +1,5 @@
+# uv 설정 (2026-11-11 conda → uv 전환). 이 리포 안에서 `uv pip ...` 하면 자동 적용.
+# torch 는 CUDA 13.0 빌드(+cu130)를 쓰므로 PyTorch 인덱스를 추가 인덱스로 둔다.
+# unsafe-best-match: pip 처럼 모든 인덱스에서 가장 맞는 버전을 고른다 (uv 기본값은 첫 인덱스 우선).
+extra-index-url = ["https://download.pytorch.org/whl/cu130"]
+index-strategy = "unsafe-best-match"

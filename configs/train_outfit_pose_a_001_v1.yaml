@@ -1,0 +1,69 @@
+---
+# Z-Image 얼굴+의상+포즈 LoRA 학습 config
+# 인물 A + 의상 001 (면/폴리에스터 혼방 원피스)
+# 목적: 특정 의상이 이 인물의 체형/포즈에 따라 드레이핑되는 방식 학습
+job: extension
+config:
+  name: "outfit_pose_a_001_v1"
+  process:
+    - type: 'sd_trainer'
+      training_folder: "/home/sasair/dev/ai-forge/output/lora"
+      device: cuda:0
+      # 얼굴 trigger + 의상 trigger 둘 다 사용
+      # 캡션에 직접 두 trigger를 포함시키는 방식 사용 (아래 datasets 참고)
+      network:
+        type: "lora"
+        linear: 16
+        linear_alpha: 16
+      save:
+        dtype: bf16
+        save_every: 250
+        max_step_saves_to_keep: 3
+        save_format: "safetensors"
+      datasets:
+        - folder_path: "/home/sasair/dev/ai-forge/data/lora/outfit_a_001"
+          caption_ext: "txt"
+          caption_dropout_rate: 0.05
+          shuffle_tokens: false
+          cache_latents_to_disk: true
+          resolution: [ 512, 768, 1024 ]
+      train:
+        batch_size: 1
+        steps: 2000        # 20~30장 기준 시작값
+        gradient_accumulation: 1
+        train_unet: true
+        train_text_encoder: false
+        gradient_checkpointing: true
+        noise_scheduler: "flowmatch"
+        timestep_type: "weighted"
+        optimizer: "adamw8bit"
+        lr: 1e-4
+        ema_config:
+          use_ema: true
+          ema_decay: 0.99
+        dtype: bf16
+      model:
+        name_or_path: "/home/sasair/dev/ai-forge/vendor/models/z-image"
+        arch: "zimage"
+        quantize: true
+        quantize_te: true
+        low_vram: false
+      sample:
+        sampler: "flowmatch"
+        sample_every: 250
+        width: 768
+        height: 1024
+        prompts:
+          - "psn_a wearing ofit_a001 dress, standing, front view, full body"
+          - "psn_a wearing ofit_a001 dress, sitting on chair, 3/4 view"
+          - "psn_a wearing ofit_a001 dress, walking, side view, full body"
+          - "psn_a wearing ofit_a001 dress, arms raised, front view, fabric flowing"
+        neg: "blurry, low quality, cartoon, wrong outfit, different person"
+        seed: 42
+        walk_seed: true
+        guidance_scale: 3.5
+        sample_steps: 30
+
+meta:
+  name: "[name]"
+  version: '1.0'

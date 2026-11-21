@@ -1,0 +1,91 @@
+# MiniMax H3 ref2va 캐릭터 LoRA — AHyun v1 (세 번째 캐릭터, IAn/WonHee v2 방식 그대로)
+# 시작: bash scripts/train_h3_ahyun.sh   (캡션 → 학습. ComfyUI 는 내려 둘 것)
+# 데이터: training/inputs/Ahyun 실사 64장 → scripts/make_face_dataset.py 얼굴 크롭 512² 47장(AHyun_face)
+#   → scripts/vlm_caption_v2.py 로 머리·의상·소품·배경·조명 맥락 캡션(얼굴 묘사 제외), 참조(control) 없음.
+#   판정: 트리거만 샘플의 닮음 + 공원 프롬프트가 공원으로 나오는지. IAn/WonHee 는 18000 스텝본을 씀.
+job: extension
+config:
+  name: h3_ahyun_v1
+  process:
+  - type: sd_trainer
+    training_folder: /home/sasair/dev/training/outputs
+    device: cuda:0
+    trigger_word: AHyun
+    network:
+      type: lora
+      linear: 16
+      linear_alpha: 16
+      network_kwargs:
+        ignore_if_contains:
+        - adaln_proj
+    save:
+      dtype: bf16
+      save_every: 500
+      max_step_saves_to_keep: 9999
+      save_format: safetensors
+    datasets:
+    - folder_path: /home/sasair/dev/training/inputs/AHyun_face
+      caption_ext: txt
+      caption_dropout_rate: 0.05
+      shuffle_tokens: false
+      cache_latents_to_disk: true
+      flip_x: false
+      resolution:
+      - 512
+      num_frames: 1
+      auto_frame_count: false
+      do_audio: false
+    train:
+      batch_size: 1
+      steps: 18000  # 다른 두 캐릭터 v2 와 같은 길이. 500마다 저장·샘플, 모자라면 늘려서 이어 학습
+      gradient_accumulation: 1
+      train_unet: true
+      train_text_encoder: false
+      gradient_checkpointing: true
+      noise_scheduler: flowmatch
+      timestep_type: shift
+      optimizer: adamw8bit
+      lr: 0.0001
+      cache_text_embeddings: true
+      do_guidance_loss: true
+      guidance_loss_target: 3.5
+      dtype: bf16
+    model:
+      name_or_path: Comfy-Org/MiniMax-H3
+      arch: minimax_h3_ref2va
+      quantize: true
+      qtype: convrot8
+      quantize_te: true
+      qtype_te: nvfp4
+      low_vram: true
+      layer_offloading: true
+      layer_offloading_transformer_percent: 0.5
+      assistant_lora_path: ostris/minimax_h3_training_adapter/minimax_h3_ref2va_training_adapter_v1.safetensors
+      model_kwargs:
+        partition: ref2va_pruned
+        dit_ref2va_pruned_path: /home/sasair/dev/comfyui/models/diffusion_models/minimax/minimax_h3_ref2va_pruned_int8_convrot.safetensors
+        text_encoder_path: /home/sasair/dev/comfyui/models/text_encoders/qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors
+        video_vae_path: /home/sasair/dev/comfyui/models/vae/minimax_h3_video_vae_fp16.safetensors
+        audio_vae_path: /home/sasair/dev/comfyui/models/vae/minimax_h3_audio_vae_fp32.safetensors
+    sample:
+      sampler: flowmatch
+      neg: ''
+      sample_every: 500
+      width: 768
+      height: 768
+      num_frames: 1
+      fps: 24
+      guidance_scale: 1
+      sample_steps: 28
+      seed: 42
+      walk_seed: true
+      samples:
+      - prompt: close-up portrait of AHyun, a woman, with long black hair and bangs, looking at the camera, natural daylight, plain background
+        ctrl_img_1: /home/sasair/dev/training/inputs/AHyun_face/AHyun_001.png
+      - prompt: waist-up shot of AHyun, a woman, with long black hair and bangs, wearing a white school uniform shirt, walking on a hill of wildflowers, smiling, bright daylight
+        ctrl_img_1: /home/sasair/dev/training/inputs/AHyun_face/AHyun_030.png
+      - prompt: close-up portrait of AHyun, a woman, with long black hair and bangs, facing the camera directly, neutral expression, plain light grey background, soft natural daylight
+      - prompt: waist-up shot of AHyun, a woman, with long black hair and bangs, wearing a white t-shirt and jeans, walking along a tree-lined path in a sunlit park, smiling, soft daylight
+meta:
+  name: h3_ahyun_v1
+  version: '1.0'

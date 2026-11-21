@@ -1,0 +1,92 @@
+# MiniMax H3 ref2va 캐릭터 LoRA — WonHee v2 (맥락 캡션 재학습)
+# 실행: cd /home/sasair/dev/training && \
+#   MODELS_PATH=/home/sasair/dev/comfyui/models .venv/bin/python ai-toolkit/run.py configs/h3_wonhee_v2.yaml
+# v1 과의 차이: 캡션만. v1 은 "WonHee, a woman" 한 줄이라 무대 조명·마이크·관객까지 트리거에 흡수돼 6000 에서 프롬프트 무시(과적합).
+#   v2 는 vlm_caption_v2.py(Qwen2.5-VL) 로 머리·의상·소품·배경·조명을 서술하고 얼굴 묘사는 제외 → 트리거에는 얼굴만 남기는 것이 목적.
+#   판정: 트리거만 샘플의 닮음 + 공원 프롬프트가 공원으로 나오는지 둘 다. 참조 없음, 처음부터 6000.
+job: extension
+config:
+  name: h3_wonhee_v2
+  process:
+  - type: sd_trainer
+    training_folder: /home/sasair/dev/training/outputs
+    device: cuda:0
+    trigger_word: WonHee
+    network:
+      type: lora
+      linear: 16
+      linear_alpha: 16
+      network_kwargs:
+        ignore_if_contains:
+        - adaln_proj
+    save:
+      dtype: bf16
+      save_every: 500
+      max_step_saves_to_keep: 9999
+      save_format: safetensors
+    datasets:
+    - folder_path: /home/sasair/dev/training/inputs/WonHee_face
+      caption_ext: txt
+      caption_dropout_rate: 0.05
+      shuffle_tokens: false
+      cache_latents_to_disk: true
+      flip_x: false
+      resolution:
+      - 512
+      num_frames: 1
+      auto_frame_count: false
+      do_audio: false
+    train:
+      batch_size: 1
+      steps: 18000  # 12000 체크포인트에서 이어 학습(09-14 야간 2차 연장). 출력 폴더 유지 필수
+      gradient_accumulation: 1
+      train_unet: true
+      train_text_encoder: false
+      gradient_checkpointing: true
+      noise_scheduler: flowmatch
+      timestep_type: shift
+      optimizer: adamw8bit
+      lr: 0.0001
+      cache_text_embeddings: true
+      do_guidance_loss: true
+      guidance_loss_target: 3.5
+      dtype: bf16
+    model:
+      name_or_path: Comfy-Org/MiniMax-H3
+      arch: minimax_h3_ref2va
+      quantize: true
+      qtype: convrot8
+      quantize_te: true
+      qtype_te: nvfp4
+      low_vram: true
+      layer_offloading: true
+      layer_offloading_transformer_percent: 0.5
+      assistant_lora_path: ostris/minimax_h3_training_adapter/minimax_h3_ref2va_training_adapter_v1.safetensors
+      model_kwargs:
+        partition: ref2va_pruned
+        dit_ref2va_pruned_path: /home/sasair/dev/comfyui/models/diffusion_models/minimax/minimax_h3_ref2va_pruned_int8_convrot.safetensors
+        text_encoder_path: /home/sasair/dev/comfyui/models/text_encoders/qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors
+        video_vae_path: /home/sasair/dev/comfyui/models/vae/minimax_h3_video_vae_fp16.safetensors
+        audio_vae_path: /home/sasair/dev/comfyui/models/vae/minimax_h3_audio_vae_fp32.safetensors
+    sample:
+      sampler: flowmatch
+      neg: ''
+      sample_every: 500
+      width: 768
+      height: 768
+      num_frames: 1
+      fps: 24
+      guidance_scale: 1
+      sample_steps: 28
+      seed: 42
+      walk_seed: true
+      samples:
+      - prompt: close-up portrait of WonHee, a woman, with long black hair, looking at the camera, natural daylight, plain background
+        ctrl_img_1: /home/sasair/dev/training/inputs/WonHee_face/WonHee_001.png
+      - prompt: waist-up shot of WonHee, a woman, with long black hair, wearing a white school uniform shirt, walking on a hill of wildflowers, smiling, bright daylight
+        ctrl_img_1: /home/sasair/dev/training/inputs/WonHee_face/WonHee_050.png
+      - prompt: close-up portrait of WonHee, a woman, with long black hair, facing the camera directly, neutral expression, plain light grey background, soft natural daylight
+      - prompt: waist-up shot of WonHee, a woman, with long black hair, wearing a white t-shirt and jeans, walking along a tree-lined path in a sunlit park, smiling, soft daylight
+meta:
+  name: h3_wonhee_v2
+  version: '1.0'

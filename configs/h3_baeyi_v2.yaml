@@ -1,0 +1,96 @@
+job: extension
+config:
+  name: h3_baeyi_v2
+  process:
+  - type: sd_trainer
+    training_folder: /home/sasair/dev/training/outputs
+    device: cuda:0
+    trigger_word: BaeYi
+    network:
+      type: lora
+      linear: 64
+      linear_alpha: 64
+    save:
+      dtype: bf16
+      save_every: 500
+      max_step_saves_to_keep: 9999
+      save_format: safetensors
+    datasets:
+    - folder_path: /home/sasair/dev/training/inputs/BaeYi
+      caption_ext: txt
+      caption_dropout_rate: 0.05
+      shuffle_tokens: false
+      cache_latents_to_disk: true
+      flip_x: false
+      resolution:
+      - 768
+      - 1024
+      num_frames: 1
+      auto_frame_count: false
+      do_audio: false
+    - folder_path: /home/sasair/dev/training/inputs/BaeYi_face
+      caption_ext: txt
+      caption_dropout_rate: 0.05
+      shuffle_tokens: false
+      cache_latents_to_disk: true
+      flip_x: false
+      resolution:
+      - 512
+      - 768
+      num_frames: 1
+      auto_frame_count: false
+      do_audio: false
+    train:
+      batch_size: 1
+      steps: 8000
+      gradient_accumulation: 1
+      train_unet: true
+      train_text_encoder: false
+      gradient_checkpointing: true
+      noise_scheduler: flowmatch
+      timestep_type: shift
+      optimizer: adamw8bit
+      lr: 0.00012
+      cache_text_embeddings: true
+      do_guidance_loss: false
+      guidance_loss_target: 3.0
+      dtype: bf16
+    model:
+      name_or_path: Comfy-Org/MiniMax-H3
+      arch: minimax_h3_ref2va
+      quantize: true
+      qtype: qfloat8
+      quantize_te: true
+      qtype_te: nvfp4
+      low_vram: true
+      layer_offloading: true
+      layer_offloading_transformer_percent: 0.5
+      assistant_lora_path: ostris/minimax_h3_training_adapter/minimax_h3_ref2va_training_adapter_v3.safetensors
+      model_kwargs:
+        partition: ref2va_pruned
+        dit_ref2va_pruned_path: /home/sasair/dev/comfyui/models/diffusion_models/minimax/minimax_h3_ref2va_pruned_bf16.safetensors
+        text_encoder_path: /home/sasair/dev/comfyui/models/text_encoders/qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors
+        video_vae_path: /home/sasair/dev/comfyui/models/vae/minimax_h3_video_vae_fp16.safetensors
+        audio_vae_path: /home/sasair/dev/comfyui/models/vae/minimax_h3_audio_vae_fp32.safetensors
+    sample:
+      sampler: flowmatch
+      neg: ''
+      sample_every: 500
+      width: 768
+      height: 768
+      num_frames: 1
+      fps: 24
+      guidance_scale: 1
+      sample_steps: 28
+      seed: 42
+      walk_seed: true
+      samples:
+      - prompt: chest-up shot of BaeYi, with long black hair, looking at the camera, soft natural daylight, neutral indoor background
+        ctrl_img_1: /home/sasair/dev/training/inputs/BaeYi_face/BaeYi_001.png
+      - prompt: waist-up shot of BaeYi, with long black hair, wearing a white school uniform shirt, walking on a hill of wildflowers, smiling, bright daylight
+        ctrl_img_1: /home/sasair/dev/training/inputs/BaeYi_face/BaeYi_008.png
+      - prompt: waist-up shot of BaeYi, with long black hair, wearing a white t-shirt and jeans, sitting at a sunlit wooden cafe table, gentle smile, soft daylight
+        ctrl_img_1: /home/sasair/dev/training/inputs/BaeYi_face/BaeYi_026.png
+meta:
+  name: h3_baeyi_v2
+  version: '1.0'
