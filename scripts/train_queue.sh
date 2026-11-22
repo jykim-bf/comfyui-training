@@ -24,8 +24,8 @@ run() {
   return $rc
 }
 
-run h3_ian_v3
-run h3_wonhee_v3
-run h3_ahyun_v2
-run h3_baeyi_v2
+run krea2_ian_v2
+run krea2_wonhee_v2
+run krea2_ahyun_v2
+run krea2_baeyi_v2
 echo "[queue] $(date '+%F %T') ALL DONE"

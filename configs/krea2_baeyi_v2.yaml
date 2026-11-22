@@ -1,0 +1,80 @@
+job: extension
+config:
+  name: krea2_baeyi_v2
+  process:
+  - type: sd_trainer
+    training_folder: /home/sasair/dev/training/outputs
+    device: cuda:0
+    trigger_word: IAn
+    network:
+      type: lora
+      linear: 128
+      linear_alpha: 128
+    save:
+      dtype: bf16
+      save_every: 500
+      max_step_saves_to_keep: 9999
+      save_format: safetensors
+    datasets:
+    - folder_path: /home/sasair/dev/training/inputs/BaeYi
+      caption_ext: txt
+      caption_dropout_rate: 0.05
+      shuffle_tokens: false
+      cache_latents_to_disk: true
+      flip_x: false
+      resolution:
+      - 768
+      - 1024
+      num_frames: 1
+      auto_frame_count: false
+      do_audio: false
+    - folder_path: /home/sasair/dev/training/inputs/BaeYi_face
+      caption_ext: txt
+      caption_dropout_rate: 0.05
+      shuffle_tokens: false
+      cache_latents_to_disk: true
+      flip_x: false
+      resolution:
+      - 512
+      - 768
+      num_frames: 1
+      auto_frame_count: false
+      do_audio: false   
+    train:
+      batch_size: 1
+      steps: 8000
+      gradient_accumulation: 1
+      train_unet: true
+      train_text_encoder: false
+      gradient_checkpointing: true
+      noise_scheduler: flowmatch
+      timestep_type: shift
+      optimizer: adamw8bit
+      lr: 0.00012
+      cache_text_embeddings: true
+      do_guidance_loss: false
+      guidance_loss_target: 3.0
+      dtype: bf16
+    model:
+      name_or_path: /home/sasair/dev/comfyui/models/diffusion_models/krea2/krea2_raw_bf16.safetensors
+      arch: krea2
+      quantize: true
+      quantize_te: true
+      low_vram: false
+    sample:
+      sampler: flowmatch
+      sample_every: 500
+      width: 1024
+      height: 1024
+      prompts:
+      - BaeYi, close-up portrait, natural daylight
+      - BaeYi, head and shoulders, studio lighting, clean background
+      - BaeYi, chest-up shot, outdoor afternoon light, sharp focus
+      neg: blurry, low quality, cartoon, illustration, bad anatomy, wide-angle lens distortion
+      seed: 42
+      walk_seed: true
+      guidance_scale: 4
+      sample_steps: 20
+meta:
+  name: krea2_baeyi_v2
+  version: '1.0'

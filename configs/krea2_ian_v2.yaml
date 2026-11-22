@@ -42,7 +42,7 @@ config:
       do_audio: false   
     train:
       batch_size: 1
-      steps: 4000
+      steps: 8000
       gradient_accumulation: 1
       train_unet: true
       train_text_encoder: false
@@ -64,17 +64,17 @@ config:
     sample:
       sampler: flowmatch
       sample_every: 500
-      width: 1280
-      height: 1280
+      width: 1024
+      height: 1024
       prompts:
-      - IAn, a woman, close-up portrait, natural daylight
-      - IAn, a woman, head and shoulders, studio lighting, clean background
-      - IAn, a woman, chest-up shot, outdoor afternoon light, sharp focus
+      - IAn, close-up portrait, natural daylight
+      - IAn, head and shoulders, studio lighting, clean background
+      - IAn, chest-up shot, outdoor afternoon light, sharp focus
       neg: blurry, low quality, cartoon, illustration, bad anatomy, wide-angle lens distortion
       seed: 42
       walk_seed: true
       guidance_scale: 4
-      sample_steps: 30
+      sample_steps: 20
 meta:
   name: krea2_ian_v2
   version: '1.0'
