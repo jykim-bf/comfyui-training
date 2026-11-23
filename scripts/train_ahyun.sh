@@ -3,7 +3,7 @@ set -u
 cd /home/sasair/dev/training
 source "$HOME/miniconda3/etc/profile.d/conda.sh"   # 캡션(florence-cuda)만 아직 conda
 
-NAME=h3_ahyun_v2
+NAME=krea2_ahyun_v2
 DATA=inputs/AHyun
 OUT=outputs/$NAME
 mkdir -p "$OUT"

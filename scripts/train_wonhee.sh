@@ -3,7 +3,7 @@ set -u
 cd /home/sasair/dev/training
 source "$HOME/miniconda3/etc/profile.d/conda.sh"   # 캡션(florence-cuda)만 아직 conda
 
-NAME=h3_wonhee_v2
+NAME=krea2_wonhee_v2
 DATA=inputs/wonhee
 OUT=outputs/$NAME
 mkdir -p "$OUT"

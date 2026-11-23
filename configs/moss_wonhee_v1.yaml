@@ -1,0 +1,80 @@
+job: extension
+config:
+  name: moss_wonhee_v1
+  process:
+  - type: sd_trainer
+    training_folder: /home/sasair/dev/training/outputs
+    device: cuda:0
+    trigger_word: WonHee
+    network:
+      type: lora
+      linear: 64               # 5B 모델 기준 과적합 방지 및 닮음도 스위트 스팟 (32 또는 64 권장)
+      linear_alpha: 64
+    save:
+      dtype: bf16
+      save_every: 500
+      max_step_saves_to_keep: 9999
+      save_format: safetensors
+    datasets:
+    - folder_path: /home/sasair/dev/training/inputs/WonHee
+      caption_ext: txt
+      caption_dropout_rate: 0.05
+      shuffle_tokens: false
+      cache_latents_to_disk: true
+      flip_x: false
+      resolution:
+      - 768
+      - 1024
+      num_frames: 1
+      auto_frame_count: false
+      do_audio: false
+    - folder_path: /home/sasair/dev/training/inputs/WonHee_face
+      caption_ext: txt
+      caption_dropout_rate: 0.05
+      shuffle_tokens: false
+      cache_latents_to_disk: true
+      flip_x: false
+      resolution:
+      - 768
+      - 1024
+      num_frames: 1
+      auto_frame_count: false
+      do_audio: false
+    train:
+      batch_size: 1
+      steps: 4000
+      gradient_accumulation: 1
+      train_unet: true
+      train_text_encoder: false
+      gradient_checkpointing: true
+      noise_scheduler: flowmatch
+      timestep_type: shift
+      optimizer: adamw8bit
+      lr: 0.0001               # 5B 아키텍처 표준 학습률 (1e-4)
+      cache_text_embeddings: true
+      do_guidance_loss: false
+      guidance_loss_target: 3.0
+      dtype: bf16
+    model:
+      name_or_path: /home/sasair/dev/comfyui/models/diffusion_models/moss/moss_image_bf16.safetensors # 나중에 실제 경로로 수정
+      arch: moss               # AI-Toolkit 설치 버전에 따라 moss 또는 moss_image로 지정
+      quantize: false          # 5B 모델은 RTX 5090(32GB)에 순정 BF16으로 여유롭게 올라감
+      quantize_te: true
+      low_vram: false          # 오프로딩 해제 (학습 속도 대폭 상승)
+    sample:
+      sampler: flowmatch
+      sample_every: 500
+      width: 768
+      height: 1024
+      prompts:
+      - chest-up shot of WonHee, a young Korean woman, looking at the camera, natural daylight, clean indoor background
+      - waist-up shot of WonHee, a young Korean woman, wearing a white school uniform shirt, walking on a hill of wildflowers, bright daylight
+      - waist-up shot of WonHee, a young Korean woman, wearing a white t-shirt and jeans, sitting at a sunlit wooden cafe table, soft daylight
+      neg: blurry, low quality, cartoon, illustration, bad anatomy, wide-angle lens distortion
+      seed: 42
+      walk_seed: true
+      guidance_scale: 3.5
+      sample_steps: 25
+meta:
+  name: moss_wonhee_v1
+  version: '1.0'
